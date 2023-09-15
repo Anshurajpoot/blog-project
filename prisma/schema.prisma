@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model comment {
+  id           Int       @id @default(autoincrement())
+  content      String    @db.VarChar(255)
+  postId       Int?
+  userId       Int?
+  name         String?   @db.VarChar(255)
+  created_date DateTime? @default(now()) @db.DateTime(0)
+  post         post?     @relation(fields: [postId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "comment_ibfk_1")
+  userr        userr?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "comment_user_fk")
+
+  @@index([postId], map: "comment_ibfk_1")
+  @@index([userId], map: "comment_user_fk")
+}
+
+model post {
+  id           Int       @id @default(autoincrement())
+  userId       Int?
+  content      String?   @db.VarChar(255)
+  header       String?   @db.VarChar(255)
+  created_date DateTime? @default(now()) @db.DateTime(0)
+  url          String?   @db.VarChar(300)
+  comment      comment[]
+  userr        userr?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "post_ibfk_1")
+
+  @@index([userId], map: "userId")
+}
+
+model userr {
+  id               Int           @id @default(autoincrement())
+  name             String        @db.VarChar(255)
+  email            String        @db.VarChar(255)
+  password         String        @db.VarChar(255)
+  roles            String        @db.VarChar(255)
+  token            String?       @db.VarChar(255)
+  is_private       Boolean?      @default(false)
+  url              String?       @db.VarChar(300)
+  comment          comment[]
+  post             post[]
+  OTP              Int?
+  request          Boolean?      @default(false)
+
+  // Add the opposite relations for the follow requests
+  requestedFollows  followRequest[] @relation("FollowRequestRequester")
+  receivedFollows   followRequest[] @relation("FollowRequestTarget")
+}
+
+model followRequest {
+  id            Int       @id @default(autoincrement())
+  requesterId   Int       // The user ID of the user sending the follow request
+  targetId      Int       // The user ID of the user receiving the follow request
+  status        String    // Possible values: "pending", "accepted", "rejected"
+
+  requesterUser userr     @relation(name: "FollowRequestRequester", fields: [requesterId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "follow_request_requester_fk")
+  targetUser    userr     @relation(name: "FollowRequestTarget", fields: [targetId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "follow_request_target_fk")
+
+  @@index([requesterId], map: "follow_request_requester_fk")
+  @@index([targetId], map: "follow_request_target_fk")
+}

@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `post` ADD COLUMN `url` VARCHAR(300) NULL;
