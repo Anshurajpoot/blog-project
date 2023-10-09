@@ -12,46 +12,18 @@ const app = express();
 const randomstring = require('randomstring');
 require('dotenv').config();
 
+const path = require('path');
+
 const secretKey = 'your-secret-key';
 const jwt = require('jsonwebtoken');
+
 
 app.use(bodyParser.json());
 app.use(cors())
 
+app.use(express.static(path.join(__dirname, 'public')));
+
 app.use('/uploads', express.static('uploads'));
-
-function authenticateToken(req, res, next) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(422).json({ message: 'Please provide a valid token' });
-    }
-
-    const token = authHeader.split(' ')[1];
-    try {
-        const decoded = jwt.verify(token, secretKey);
-        req.user = decoded; // Attach user data to the request object
-        next(); // Continue to the protected route
-    } catch (error) {
-        return res.status(403).json({ error: 'Failed to authenticate token' });
-    }
-}
-
-function verifyToken(req, res, next) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const token = authHeader.split(' ')[1];
-    jwt.verify(token, secretKey, (err, decoded) => {
-        if (err) {
-            return res.status(401).json({ error: 'Failed to authenticate token', err });
-        }
-
-        req.user = decoded;
-        next();
-    });
-}
 
 function decryptPassword(encryptedPassword) {
     const bytes = CryptoJS.AES.decrypt(encryptedPassword, secretKey);
@@ -298,8 +270,8 @@ async function getposts(req, res) {
 
 async function createcomment(req, res) {
     try {
-        const { content, postId } = req.body;
-        let userId = null;
+        const { content, postid } = req.body;
+        let userid = null;
         let name = 'Unknown';
 
         const authHeader = req.headers.authorization;
@@ -307,22 +279,23 @@ async function createcomment(req, res) {
             const token = authHeader.split(' ')[1];
             try {
                 const decoded = jwt.verify(token, secretKey);
-                userId = decoded.id;
+                userid = decoded.id;
                 name = decoded.name;
             } catch (error) {
                 console.error('Failed to authenticate token:', error);
                 res.status(401).json({ error: 'Failed to authenticate token' });
                 return;
             }
-        } else {
-            userId = 100;
         }
+        //  else {
+        // //     userid = 100;
+        // // }
 
         const comment = await prisma.comment.create({
             data: {
                 content,
-                postId: parseInt(postId),
-                userId,
+                postid: parseInt(postid),
+                userid,
                 name,
             },
         });
@@ -383,11 +356,11 @@ async function postandcommentbyid(req, res) {
         const { id } = req.params;
 
         const postCount = await prisma.post.count({
-            where: { userId: parseInt(id) },
+            where: { userid: parseInt(id) },
         });
 
         const commentCount = await prisma.comment.count({
-            where: { userId: parseInt(id) },
+            where: { userid: parseInt(id) },
         });
 
         res.json({ postCount, commentCount });
@@ -402,22 +375,59 @@ function protected(req, res) {
     res.json({ message: 'Protected route accessed successfully' });
 }
 
+// async function createpost(req, res) {
+//     try {
+//         const content = req.body.content;
+//         const header = req.body.header;
+//         const userid = req.user.id;
+//         if (userid !== req.body.userid) {
+//             return res.status(403).json({ error: 'Invalid user ID' });
+//         }
+//         // const file = req.body.file;
+//         const url = 'http://localhost:4000/uploads/' + req.body.file
+//         console.log("heii", url)
+
+//         const post = await prisma.post.create({
+//             data: {
+//                 content,
+//                 header,
+//                 url,
+//                 userid
+//             },
+//         });
+
+//         res.json('Post created');
+//     } catch (error) {
+//         console.error('Failed to create post:', error);
+//         res.status(500).json({ error: 'Failed to create post' });
+//     }
+// }
+
 async function createpost(req, res) {
     try {
         const content = req.body.content;
         const header = req.body.header;
-        const userId = req.user.id;
-        if (userId !== req.body.userId) {
+        const userid = req.user.id;
+
+        // Debugging: Log relevant information
+        console.log("Content:", content);
+        console.log("Header:", header);
+        console.log("UserID:", userid);
+
+        if (userid !== req.body.userid) {
             return res.status(403).json({ error: 'Invalid user ID' });
         }
-        const url = 'http://localhost:4000/uploads/' + req.body.file
+
+        // Debugging: Log the URL
+        const url = 'http://localhost:4000/uploads/' + req.body.file;
+        console.log("URL:", url);
 
         const post = await prisma.post.create({
             data: {
                 content,
                 header,
                 url,
-                userId
+                userid
             },
         });
 
@@ -485,7 +495,7 @@ async function forgotpassword(req, res) {
             res.status(500).json({ error: 'Forgot password failed' });
         }
     };
-}
+};
 
 async function forgotpasswordd(req, res) {
     const userEmail = req.body.email;
@@ -526,8 +536,9 @@ async function combineddata(req, res) {
     try {
         const usersWithFollowRequests = await prisma.userr.findMany({
             include: {
-                requestedFollows: true,
-                receivedFollows: true,
+                requestedFollows: 1,
+
+                receivedFollows: 1,
             },
         });
         res.json(usersWithFollowRequests);
@@ -547,7 +558,6 @@ async function postheaders(req, res) {
         res.status(500).json({ error: 'Failed to fetch post headers' });
     }
 };
-
 
 
 module.exports = {

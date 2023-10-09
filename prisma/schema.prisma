@@ -3,65 +3,54 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model comment {
   id           Int       @id @default(autoincrement())
   content      String    @db.VarChar(255)
-  postId       Int?
-  userId       Int?
+  postid       Int?
+  userid       Int?
   name         String?   @db.VarChar(255)
-  created_date DateTime? @default(now()) @db.DateTime(0)
-  post         post?     @relation(fields: [postId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "comment_ibfk_1")
-  userr        userr?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "comment_user_fk")
+  created_date DateTime? @default(now()) @db.Timestamp(6)
+  post         post?     @relation(fields: [postid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "comment_ibfk_1")
+  userr        userr?    @relation(fields: [userid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "comment_user_fk")
+}
 
-  @@index([postId], map: "comment_ibfk_1")
-  @@index([userId], map: "comment_user_fk")
+model followrequest {
+  id                                     Int    @id @default(autoincrement())
+  requesterid                            Int
+  targetid                               Int
+  status                                 String @db.VarChar(191)
+  userr_followrequest_requesteridTouserr userr  @relation("followrequest_requesteridTouserr", fields: [requesterid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "follow_request_requester_fk")
+  userr_followrequest_targetidTouserr    userr  @relation("followrequest_targetidTouserr", fields: [targetid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "follow_request_target_fk")
 }
 
 model post {
   id           Int       @id @default(autoincrement())
-  userId       Int?
+  userid       Int?
   content      String?   @db.VarChar(255)
   header       String?   @db.VarChar(255)
-  created_date DateTime? @default(now()) @db.DateTime(0)
+  created_date DateTime? @default(now()) @db.Timestamp(6)
   url          String?   @db.VarChar(300)
   comment      comment[]
-  userr        userr?    @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "post_ibfk_1")
-
-  @@index([userId], map: "userId")
+  userr        userr?    @relation(fields: [userid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "post_ibfk_1")
 }
 
 model userr {
-  id               Int           @id @default(autoincrement())
-  name             String        @db.VarChar(255)
-  email            String        @db.VarChar(255)
-  password         String        @db.VarChar(255)
-  roles            String        @db.VarChar(255)
-  token            String?       @db.VarChar(255)
-  is_private       Boolean?      @default(false)
-  url              String?       @db.VarChar(300)
-  comment          comment[]
-  post             post[]
-  OTP              Int?
-  request          Boolean?      @default(false)
-
-  // Add the opposite relations for the follow requests
-  requestedFollows  followRequest[] @relation("FollowRequestRequester")
-  receivedFollows   followRequest[] @relation("FollowRequestTarget")
-}
-
-model followRequest {
-  id            Int       @id @default(autoincrement())
-  requesterId   Int       // The user ID of the user sending the follow request
-  targetId      Int       // The user ID of the user receiving the follow request
-  status        String    // Possible values: "pending", "accepted", "rejected"
-
-  requesterUser userr     @relation(name: "FollowRequestRequester", fields: [requesterId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "follow_request_requester_fk")
-  targetUser    userr     @relation(name: "FollowRequestTarget", fields: [targetId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "follow_request_target_fk")
-
-  @@index([requesterId], map: "follow_request_requester_fk")
-  @@index([targetId], map: "follow_request_target_fk")
+  id                                             Int             @id @default(autoincrement())
+  name                                           String          @db.VarChar(255)
+  email                                          String          @db.VarChar(255)
+  password                                       String          @db.VarChar(255)
+  roles                                          String          @db.VarChar(255)
+  token                                          String?         @db.VarChar(255)
+  is_private                                     Boolean?        @default(false)
+  url                                            String?         @db.VarChar(300)
+  otp                                            Int?
+  request                                        Boolean?        @default(false)
+  comment                                        comment[]
+  followrequest_followrequest_requesteridTouserr followrequest[] @relation("followrequest_requesteridTouserr")
+  followrequest_followrequest_targetidTouserr    followrequest[] @relation("followrequest_targetidTouserr")
+  post                                           post[]
 }
