@@ -98,14 +98,14 @@ async function login(req, res) {
 
         console.log(password);
 
-        const expiresInMinutes = 60;
-        const expirationTimeInSeconds = expiresInMinutes * 60;
+        // const expiresInMinutes = 30000;
+        // const expirationTimeInSeconds = expiresInMinutes * 60;
 
 
         const token = jwt.sign(
             { id: user.id, name: user.name, email: user.email, roles: user.roles },
             secretKey,
-            { expiresIn: expirationTimeInSeconds }
+            { expiresIn: '1h' }
 
         );
         await prisma.userr.update({
