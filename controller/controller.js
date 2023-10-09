@@ -89,12 +89,12 @@ async function login(req, res) {
         }
 
 
-        const decryptedPassword = decryptPassword(user.password);
+        // const decryptedPassword = decryptPassword(user.password);
 
-        if (decryptedPassword !== password) {
-            return res.status(401).json({ error: 'Invalid password' });
+        // if (decryptedPassword !== password) {
+        //     return res.status(401).json({ error: 'Invalid password' });
 
-        }
+        // }
 
         console.log(password);
 
