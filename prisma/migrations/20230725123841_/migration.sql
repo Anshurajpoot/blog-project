@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE `userr` ADD COLUMN `OTP` INTEGER NULL;
